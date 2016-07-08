@@ -1,0 +1,41 @@
+version : '2'
+
+services:
+  backend:
+    build: backend/init
+    command: ./manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend/src/:/code
+    depends_on:
+      - database
+    links:
+      - database:db
+
+  bridge:
+    build: bridge/init
+    volumes:
+      - ./bridge/src/socket.js:/srv/socket.js
+      - ./bridge/data/websocket:/srv/logs
+    depends_on:
+      - backend
+    links:
+      - backend:back
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: frontend/src
+    volumes:
+        - ./frontend/src/app:/src/app
+    ports:
+      - "2800:8080"
+    links:
+      - bridge:hand
+    command: node /src/app/server.js
+
+  database:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD = backendpass
+    ports:
+      - "8036:5432"
